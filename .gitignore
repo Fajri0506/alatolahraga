@@ -1,0 +1,48 @@
+# ===========================
+# Node.js
+# ===========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ===========================
+# Environment Variables (RAHASIA - jangan di-commit!)
+# ===========================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ===========================
+# Build Output
+# ===========================
+dist/
+build/
+.vite/
+
+# ===========================
+# Upload Files (file user - terlalu besar)
+# ===========================
+backend/src/uploads/*
+!backend/src/uploads/.gitkeep
+
+# ===========================
+# OS & Editor
+# ===========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# ===========================
+# Logs
+# ===========================
+logs/
+*.log
