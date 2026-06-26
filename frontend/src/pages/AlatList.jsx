@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axiosInstance from '../api/axiosInstance';
+import axiosInstance, { getUploadUrl } from '../api/axiosInstance';
 
 const AlatList = () => {
   const [tools, setTools] = useState([]);
@@ -119,7 +119,7 @@ const AlatList = () => {
               <div className="h-48 w-full bg-slate-800 relative">
                 {tool.foto ? (
                   <img
-                    src={`http://localhost:5001/uploads/${tool.foto}`}
+                    src={getUploadUrl(tool.foto)}
                     alt={tool.nama_alat}
                     className="w-full h-full object-cover"
                   />

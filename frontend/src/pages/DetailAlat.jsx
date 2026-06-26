@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import axiosInstance from '../api/axiosInstance';
+import axiosInstance, { getUploadUrl } from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 
 const DetailAlat = () => {
@@ -78,7 +78,7 @@ const DetailAlat = () => {
         <div className="rounded-xl overflow-hidden bg-slate-800 h-80 border border-white/5 relative">
           {tool.foto ? (
             <img
-              src={`http://localhost:5001/uploads/${tool.foto}`}
+              src={getUploadUrl(tool.foto)}
               alt={tool.nama_alat}
               className="w-full h-full object-cover"
             />

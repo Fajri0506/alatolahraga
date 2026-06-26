@@ -9,10 +9,10 @@ const PenyewaanModel = {
       // 1. Insert into penyewaan
       const [rentalResult] = await connection.query(
         `INSERT INTO penyewaan (id_user, tanggal_sewa, tanggal_kembali, total_harga, status, catatan) 
-         VALUES (?, ?, ?, ?, 'menunggu', ?)`,
+         VALUES ($1, $2, $3, $4, 'menunggu', $5) RETURNING id_penyewaan`,
         [id_user, tanggal_sewa, tanggal_kembali, total_harga, catatan || null]
       );
-      const id_penyewaan = rentalResult.insertId;
+      const id_penyewaan = rentalResult[0]?.id_penyewaan;
 
       // 2. Insert into detail_penyewaan
       for (const item of items) {

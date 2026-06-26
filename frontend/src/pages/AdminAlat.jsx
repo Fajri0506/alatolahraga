@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axiosInstance from '../api/axiosInstance';
+import axiosInstance, { getUploadUrl } from '../api/axiosInstance';
 
 const AdminAlat = () => {
   const [tools, setTools] = useState([]);
@@ -356,7 +356,7 @@ const AdminAlat = () => {
                     <div className="h-10 w-10 bg-slate-800 rounded-lg overflow-hidden flex items-center justify-center text-xs">
                       {tool.foto ? (
                         <img
-                          src={`http://localhost:5001/uploads/${tool.foto}`}
+                          src={getUploadUrl(tool.foto)}
                           alt=""
                           className="h-full w-full object-cover"
                         />

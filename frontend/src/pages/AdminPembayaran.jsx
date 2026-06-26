@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axiosInstance from '../api/axiosInstance';
+import axiosInstance, { getUploadUrl } from '../api/axiosInstance';
 
 const AdminPembayaran = () => {
   const [payments, setPayments] = useState([]);
@@ -169,7 +169,7 @@ const AdminPembayaran = () => {
                 {selectedPayment.bukti_pembayaran ? (
                   <div className="rounded-xl border border-white/10 overflow-hidden bg-slate-950 flex flex-col justify-center items-center">
                     <a
-                      href={`http://localhost:5001/uploads/${selectedPayment.bukti_pembayaran}`}
+                      href={getUploadUrl(selectedPayment.bukti_pembayaran)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold mb-2 inline-block py-2"
@@ -178,7 +178,7 @@ const AdminPembayaran = () => {
                     </a>
                     <div className="rounded-xl overflow-hidden bg-slate-900 border border-white/10 aspect-video flex items-center justify-center w-full">
                       <img
-                        src={`http://localhost:5001/uploads/${selectedPayment.bukti_pembayaran}`}
+                        src={getUploadUrl(selectedPayment.bukti_pembayaran)}
                         alt="Bukti Transfer"
                         className="w-full h-full object-contain"
                       />
