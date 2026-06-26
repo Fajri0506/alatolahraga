@@ -30,14 +30,19 @@ app.get('/', (req, res) => {
   });
 });
 
-// API Routes mounting
-app.use('/api/auth', authRoutes);
-app.use('/api/kategori', kategoriRoutes);
-app.use('/api/alat', alatRoutes);
-app.use('/api/penyewaan', penyewaanRoutes);
-app.use('/api/pengembalian', pengembalianRoutes);
-app.use('/api/pembayaran', pembayaranRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+// Create a router for all API routes
+const apiRouter = express.Router();
+apiRouter.use('/auth', authRoutes);
+apiRouter.use('/kategori', kategoriRoutes);
+apiRouter.use('/alat', alatRoutes);
+apiRouter.use('/penyewaan', penyewaanRoutes);
+apiRouter.use('/pengembalian', pengembalianRoutes);
+apiRouter.use('/pembayaran', pembayaranRoutes);
+apiRouter.use('/dashboard', dashboardRoutes);
+
+// API Routes mounting (Local & Netlify)
+app.use('/api', apiRouter);
+app.use('/.netlify/functions/api', apiRouter);
 
 // Error Handling Middleware
 app.use(errorMiddleware);
