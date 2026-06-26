@@ -30,6 +30,22 @@ app.get('/', (req, res) => {
   });
 });
 
+// Debug: ping endpoint (no DB)
+app.get('/ping', (req, res) => {
+  res.status(200).json({ status: 'OK', path: req.path, originalUrl: req.originalUrl });
+});
+
+// Debug: health check with DB test
+app.get('/health', async (req, res) => {
+  try {
+    const db = require('./config/database');
+    const [rows] = await db.query('SELECT NOW() as time');
+    res.status(200).json({ status: 'OK', db: 'connected', time: rows[0]?.time });
+  } catch (err) {
+    res.status(500).json({ status: 'ERROR', message: err.message });
+  }
+});
+
 // Create a router for all API routes
 const apiRouter = express.Router();
 apiRouter.use('/auth', authRoutes);
