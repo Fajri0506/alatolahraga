@@ -1,6 +1,11 @@
 const AlatModel = require('../models/alatModel');
 const path = require('path');
-const fs = require('fs');
+
+// Helper: generate unique filename from originalname (for memoryStorage)
+const generateFilename = (file) => {
+  const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+  return uniqueSuffix + path.extname(file.originalname);
+};
 
 const AlatController = {
   getAllAlat: async (req, res, next) => {
@@ -29,13 +34,13 @@ const AlatController = {
   createAlat: async (req, res, next) => {
     try {
       const { id_kategori, nama_alat, deskripsi, stok, harga_sewa, kondisi, status } = req.body;
-      
+
       if (!nama_alat || !harga_sewa) {
         return res.status(400).json({ message: 'Nama alat dan harga sewa wajib diisi' });
       }
 
-      // Handle photo upload name
-      const foto = req.file ? req.file.filename : null;
+      // memoryStorage: no req.file.filename, generate one manually
+      const foto = req.file ? generateFilename(req.file) : null;
 
       const newId = await AlatModel.create({
         id_kategori: id_kategori ? parseInt(id_kategori) : null,
@@ -53,10 +58,6 @@ const AlatController = {
         id_alat: newId
       });
     } catch (error) {
-      // If error occurs, cleanup uploaded file if exists
-      if (req.file) {
-        fs.unlinkSync(req.file.path);
-      }
       next(error);
     }
   },
@@ -70,22 +71,15 @@ const AlatController = {
         return res.status(400).json({ message: 'Nama alat dan harga sewa wajib diisi' });
       }
 
-      // Find current tool first to handle photo changes
       const currentTool = await AlatModel.getById(id);
       if (!currentTool) {
         return res.status(404).json({ message: 'Alat olahraga tidak ditemukan' });
       }
 
+      // memoryStorage: generate filename if new file uploaded
       let foto = undefined;
       if (req.file) {
-        foto = req.file.filename;
-        // Delete old photo if it exists
-        if (currentTool.foto) {
-          const oldPath = path.join(__dirname, '../uploads', currentTool.foto);
-          if (fs.existsSync(oldPath)) {
-            fs.unlinkSync(oldPath);
-          }
-        }
+        foto = generateFilename(req.file);
       }
 
       const updated = await AlatModel.update(id, {
@@ -105,9 +99,6 @@ const AlatController = {
 
       res.status(200).json({ message: 'Alat olahraga berhasil diperbarui' });
     } catch (error) {
-      if (req.file) {
-        fs.unlinkSync(req.file.path);
-      }
       next(error);
     }
   },
@@ -118,14 +109,6 @@ const AlatController = {
       const tool = await AlatModel.getById(id);
       if (!tool) {
         return res.status(404).json({ message: 'Alat olahraga tidak ditemukan' });
-      }
-
-      // Delete photo file from disk if exists
-      if (tool.foto) {
-        const filePath = path.join(__dirname, '../uploads', tool.foto);
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
-        }
       }
 
       await AlatModel.delete(id);

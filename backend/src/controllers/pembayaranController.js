@@ -1,7 +1,12 @@
 const PembayaranModel = require('../models/pembayaranModel');
 const PenyewaanModel = require('../models/penyewaanModel');
 const path = require('path');
-const fs = require('fs');
+
+// Helper: generate unique filename (for memoryStorage)
+const generateFilename = (file) => {
+  const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+  return uniqueSuffix + path.extname(file.originalname);
+};
 
 const PembayaranController = {
   createPembayaran: async (req, res, next) => {
@@ -23,22 +28,13 @@ const PembayaranController = {
         return res.status(403).json({ message: 'Akses ditolak' });
       }
 
-      const bukti_pembayaran = req.file ? req.file.filename : null;
+      const bukti_pembayaran = req.file ? generateFilename(req.file) : null;
 
       // Check if payment already exists
       const existingPayment = await PembayaranModel.getByRentalId(id_penyewaan);
       if (existingPayment) {
         if (existingPayment.status_pembayaran === 'lunas') {
-          if (req.file) fs.unlinkSync(req.file.path);
           return res.status(400).json({ message: 'Pembayaran untuk transaksi ini sudah lunas' });
-        }
-
-        // Clean up old receipt file if a new one is uploaded
-        if (bukti_pembayaran && existingPayment.bukti_pembayaran) {
-          const oldPath = path.join(__dirname, '../uploads', existingPayment.bukti_pembayaran);
-          if (fs.existsSync(oldPath)) {
-            fs.unlinkSync(oldPath);
-          }
         }
 
         // Update payment details and reset status to 'menunggu_verifikasi'
@@ -71,7 +67,6 @@ const PembayaranController = {
         id_pembayaran
       });
     } catch (error) {
-      if (req.file) fs.unlinkSync(req.file.path);
       next(error);
     }
   },
