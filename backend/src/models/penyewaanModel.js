@@ -18,7 +18,7 @@ const PenyewaanModel = {
       for (const item of items) {
         // Double check if tool exists and get its current price
         const [alatRows] = await connection.query(
-          'SELECT harga_sewa, stok FROM alat_olahraga WHERE id_alat = ?',
+          'SELECT harga_sewa, stok FROM alat_olahraga WHERE id_alat = $1',
           [item.id_alat]
         );
         if (alatRows.length === 0) {
@@ -34,7 +34,7 @@ const PenyewaanModel = {
 
         await connection.query(
           `INSERT INTO detail_penyewaan (id_penyewaan, id_alat, jumlah, harga_sewa, subtotal) 
-           VALUES (?, ?, ?, ?, ?)`,
+           VALUES ($1, $2, $3, $4, $5)`,
           [id_penyewaan, item.id_alat, item.jumlah, alat.harga_sewa, subtotal]
         );
       }
@@ -58,7 +58,7 @@ const PenyewaanModel = {
     const params = [];
 
     if (status) {
-      query += ' WHERE p.status = ?';
+      query += ' WHERE p.status = $1';
       params.push(status);
     }
 
@@ -71,7 +71,7 @@ const PenyewaanModel = {
     const query = `
       SELECT p.* 
       FROM penyewaan p 
-      WHERE p.id_user = ? 
+      WHERE p.id_user = $1 
       ORDER BY p.id_penyewaan DESC
     `;
     const [rows] = await db.query(query, [id_user]);
@@ -84,7 +84,7 @@ const PenyewaanModel = {
       `SELECT p.*, u.nama, u.email, u.no_hp, u.alamat 
        FROM penyewaan p 
        JOIN users u ON p.id_user = u.id_user 
-       WHERE p.id_penyewaan = ?`,
+       WHERE p.id_penyewaan = $1`,
       [id]
     );
 
@@ -96,7 +96,7 @@ const PenyewaanModel = {
       `SELECT dp.*, ao.nama_alat, ao.foto 
        FROM detail_penyewaan dp 
        JOIN alat_olahraga ao ON dp.id_alat = ao.id_alat 
-       WHERE dp.id_penyewaan = ?`,
+       WHERE dp.id_penyewaan = $1`,
       [id]
     );
 
@@ -110,13 +110,13 @@ const PenyewaanModel = {
       await connection.beginTransaction();
 
       // 1. Get current rental status & details
-      const [rentals] = await connection.query('SELECT status FROM penyewaan WHERE id_penyewaan = ?', [id]);
+      const [rentals] = await connection.query('SELECT status FROM penyewaan WHERE id_penyewaan = $1', [id]);
       if (rentals.length === 0) {
         throw new Error('Transaksi penyewaan tidak ditemukan');
       }
       const oldStatus = rentals[0].status;
 
-      const [details] = await connection.query('SELECT id_alat, jumlah FROM detail_penyewaan WHERE id_penyewaan = ?', [id]);
+      const [details] = await connection.query('SELECT id_alat, jumlah FROM detail_penyewaan WHERE id_penyewaan = $1', [id]);
 
       // Helper status checks
       const isApprovedOld = ['disetujui', 'sedang_disewa', 'selesai', 'terlambat'].includes(oldStatus);
@@ -126,7 +126,7 @@ const PenyewaanModel = {
       if (isApprovedOld && !isApprovedNew) {
         for (const item of details) {
           await connection.query(
-            'UPDATE alat_olahraga SET stok = stok + ? WHERE id_alat = ?',
+            'UPDATE alat_olahraga SET stok = stok + $1 WHERE id_alat = $2',
             [item.jumlah, item.id_alat]
           );
         }
@@ -135,19 +135,19 @@ const PenyewaanModel = {
       else if (!isApprovedOld && isApprovedNew) {
         for (const item of details) {
           // Check stock
-          const [alat] = await connection.query('SELECT stok, nama_alat FROM alat_olahraga WHERE id_alat = ?', [item.id_alat]);
+          const [alat] = await connection.query('SELECT stok, nama_alat FROM alat_olahraga WHERE id_alat = $1', [item.id_alat]);
           if (alat[0].stok < item.jumlah) {
             throw new Error(`Stok untuk alat "${alat[0].nama_alat}" tidak mencukupi`);
           }
           await connection.query(
-            'UPDATE alat_olahraga SET stok = stok - ? WHERE id_alat = ?',
+            'UPDATE alat_olahraga SET stok = stok - $1 WHERE id_alat = $2',
             [item.jumlah, item.id_alat]
           );
         }
       }
 
       // 2. Update status in DB
-      await connection.query('UPDATE penyewaan SET status = ? WHERE id_penyewaan = ?', [newStatus, id]);
+      await connection.query('UPDATE penyewaan SET status = $1 WHERE id_penyewaan = $2', [newStatus, id]);
 
       await connection.commit();
       return true;
@@ -165,23 +165,23 @@ const PenyewaanModel = {
       await connection.beginTransaction();
 
       // If rental was active, restore stock before deleting
-      const [rentals] = await connection.query('SELECT status FROM penyewaan WHERE id_penyewaan = ?', [id]);
+      const [rentals] = await connection.query('SELECT status FROM penyewaan WHERE id_penyewaan = $1', [id]);
       if (rentals.length > 0) {
         const status = rentals[0].status;
         const isApproved = ['disetujui', 'sedang_disewa', 'selesai', 'terlambat'].includes(status);
         
         if (isApproved) {
-          const [details] = await connection.query('SELECT id_alat, jumlah FROM detail_penyewaan WHERE id_penyewaan = ?', [id]);
+          const [details] = await connection.query('SELECT id_alat, jumlah FROM detail_penyewaan WHERE id_penyewaan = $1', [id]);
           for (const item of details) {
             await connection.query(
-              'UPDATE alat_olahraga SET stok = stok + ? WHERE id_alat = ?',
+              'UPDATE alat_olahraga SET stok = stok + $1 WHERE id_alat = $2',
               [item.jumlah, item.id_alat]
             );
           }
         }
       }
 
-      const [result] = await connection.query('DELETE FROM penyewaan WHERE id_penyewaan = ?', [id]);
+      const [result] = await connection.query('DELETE FROM penyewaan WHERE id_penyewaan = $1', [id]);
       await connection.commit();
       return result.affectedRows > 0;
     } catch (error) {

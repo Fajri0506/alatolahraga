@@ -1,10 +1,43 @@
 const { Pool } = require('pg');
+const dns = require('dns');
 require('dotenv').config();
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
+// Force Node.js to prefer IPv4 over IPv6 when resolving DNS
+// This fixes ENOTFOUND errors on networks that don't support IPv6
+dns.setDefaultResultOrder('ipv4first');
+
+// Parse DATABASE_URL manually to handle Supabase pooler usernames with dots
+// (e.g., "postgres.projectref") which pg's URL parser mishandles
+function parseSupabaseUrl(connectionString) {
+  try {
+    const url = new URL(connectionString);
+    return {
+      user: decodeURIComponent(url.username),
+      password: decodeURIComponent(url.password),
+      host: url.hostname,
+      port: parseInt(url.port) || 5432,
+      database: url.pathname.replace(/^\//, ''),
+      ssl: { rejectUnauthorized: false }
+    };
+  } catch (e) {
+    // Fallback to connectionString if parsing fails
+    return {
+      connectionString,
+      ssl: { rejectUnauthorized: false }
+    };
+  }
+}
+
+const poolConfig = parseSupabaseUrl(process.env.DATABASE_URL);
+const pool = new Pool(poolConfig);
+
+// Test connection on startup
+pool.connect((err, client, release) => {
+  if (err) {
+    console.error('❌ Database connection failed:', err.message);
+  } else {
+    console.log('✅ Database connected to Supabase successfully!');
+    release();
   }
 });
 
